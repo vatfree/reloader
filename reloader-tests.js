@@ -5,29 +5,26 @@
 // In order to get test output to update, you may need to
 // click the "refresh" header
 
-import { _ } from 'meteor/underscore';
-
 // http://chaijs.com/api/assert/
-import { assert } from 'meteor/practicalmeteor:chai';
+import { assert } from "meteor/practicalmeteor:chai";
+import { Reloader } from "reloader";
 
 // http://sinonjs.org/
-import sinon from 'sinon'
+import sinon from "sinon";
 
-describe('refresh', function() {
-
+describe("refresh", function() {
   beforeEach(function() {
     Reloader.reload = sinon.spy(); // todo save original and repair if needed later
   });
 
-  describe('startAndResume', function() {
-
+  describe("startAndResume", function() {
     before(function() {
       Reloader.configure({
-        refresh: 'startAndResume'
-      })
+        refresh: "startAndResume"
+      });
     });
 
-    it('reloads on resume when update is available', function() {
+    it("reloads on resume when update is available", function() {
       Reloader.updateAvailable.set(true);
 
       Reloader._onResume();
@@ -38,32 +35,28 @@ describe('refresh', function() {
       Reloader.updateAvailable.set(false);
 
       Reloader._onResume();
-      
+
       assert.isFalse(Reloader.reload.called);
     });
+  });
 
-  })
-
-  describe('start', function() {
-
+  describe("start", function() {
     before(function() {
       Reloader.configure({
-        refresh: 'start'
-      })
+        refresh: "start"
+      });
     });
 
     it("doesn't reload on resume when update is available", function() {
       Reloader.updateAvailable.set(true);
 
       Reloader._onResume();
-      
+
       assert.isFalse(Reloader.reload.called);
     });
-
   });
-})
+});
 
-describe('check', function() {
+describe("check", function() {
   // should call / not call _checkForUpdate
-})
-
+});

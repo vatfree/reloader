@@ -1,6 +1,6 @@
 Package.describe({
-  name: 'jamielob:reloader',
-  version: '1.3.0',
+  name: 'pathable:reloader',
+  version: '1.4.0',
   summary: 'More control over hot code push reloading',
   git: 'https://github.com/jamielob/reloader/',
   documentation: 'README.md'
@@ -15,9 +15,7 @@ Package.onUse(function(api) {
 
   api.use(['ecmascript',
            'check',
-           'underscore',
            'reload',
-           'templating',
            'reactive-var',
            'tracker',
            'launch-screen'], 'client');
@@ -36,10 +34,9 @@ Npm.depends({
 });
 
 Package.onTest(function(api) {
-  api.use('jamielob:reloader', 'client')
+  api.use('pathable:reloader', 'client');
 
   api.use(['ecmascript',
-           'underscore',
            'practicalmeteor:mocha'], 'client');
 
   api.mainModule('reloader-tests.js', 'client');

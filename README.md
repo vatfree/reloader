@@ -27,7 +27,7 @@ As of Meteor 1.3, if you prevent instant reloading on updates, the newest versio
 ### Installation
 
 ```sh
-meteor add jamielob:reloader
+meteor add pathable:reloader
 meteor remove mdg:reload-on-resume
 ```
 
