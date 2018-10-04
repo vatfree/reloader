@@ -17,9 +17,7 @@ As of Meteor 1.3, if you prevent instant reloading on updates, the newest versio
   - [launchScreenDelay](#launchscreendelay)
 - [Helpers](#helpers)
   - [Reloader.updateAvailable.get()](#reloaderupdateavailableget)
-  - [{{updateAvailable}}](#updateavailable)
   - [Reloader.reload()](#reloaderreload)
-  - [reloader-update](#reloader-update)
 - [Development](#development)
   - [Run tests](#run-tests)
   - [Credits](#credits)
@@ -39,8 +37,7 @@ The default options are shown below. You can override them anywhere in your `cli
 
 ```js
 Reloader.configure({
-  check: 'everyStart', // Check for new code every time the app starts
-  checkTimer: 3000,  // Wait 3 seconds to see if new code is available
+  check: false, // Never check, wait background download
   refresh: 'startAndResume', // Refresh to already downloaded code on both start and resume
   idleCutoff: 1000 * 60 * 10  // Wait 10 minutes before treating a resume as a start
 });
@@ -142,29 +139,9 @@ Some people have reported having their app rejected during the Apple review proc
 Reloader.updateAvailable.get(); // Reactively returns true if an update is ready
 ```
 
-#### {{updateAvailable}}
-
-This package provides a Blaze template helper that retrieves the value of the reactiveVar easily.
-
-```html
-{{#if updateAvailable}}
-  	<p>Update available!</p>
-{{/if}}
-```
-
 #### Reloader.reload()
 
 Call `Reloader.reload()` to refresh the page.
-
-#### reloader-update
-
-This package also provides an easy reload event that you can attach to a button that will briefly show the splash screen and update to the latest version. Simply add the `reloader-update` attribute to a button.
-
-```html
-{{#if updateAvailable}}
-	<a class="button" reloader-update>Tap here to update!</a>
-{{/if}}
-```
 
 ## Development
 
