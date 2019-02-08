@@ -1,3 +1,4 @@
+# OUT OF DATE
 # Reloader
 
 More control over hot code push reloading for your mobile apps. A replacement for [`mdg:reload-on-resume`](https://github.com/meteor/mobile-packages/blob/master/packages/mdg:reload-on-resume/README.md) with more options and better UX.
