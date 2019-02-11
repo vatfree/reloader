@@ -5,6 +5,11 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 [Change log file format](http://keepachangelog.com/)
 
+## [1.5.0] - 2019-02-08
+### Config using Meteor.settings
+- Config now is set using `Meteor.settings.public.reloader` object
+- Added more logs if `Meteor.settings.public.reloader.debug` is true
+
 ## [1.4.0] - 2018-10-03
 ### Independency from Blaze
 - Removed Blaze dependency
