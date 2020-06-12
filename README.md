@@ -1,4 +1,3 @@
-# OUT OF DATE
 # Reloader
 
 More control over hot code push reloading for your mobile apps. A replacement for [`mdg:reload-on-resume`](https://github.com/meteor/mobile-packages/blob/master/packages/mdg:reload-on-resume/README.md) with more options and better UX.
@@ -10,7 +9,7 @@ As of Meteor 1.3, if you prevent instant reloading on updates, the newest versio
 
 ### Contents
 
-- [Configure](#configure)
+- [Options](#options)
   - [check](#check)
   - [checkTimer](#checktimer)
   - [refresh](#refresh)
@@ -26,52 +25,47 @@ As of Meteor 1.3, if you prevent instant reloading on updates, the newest versio
 ### Installation
 
 ```sh
-meteor add pathable:reloader
+meteor add quave:reloader
 meteor remove mdg:reload-on-resume
 ```
 
 If you have any calls to `location.reload()` or `location.replace(location.href)` in your app, replace them with `Reloader.reload()`.
 
-## Configure
+## Options
 
-The default options are shown below. You can override them anywhere in your `client/` folder.
+The default options are shown below. You can override them in your settings.
 
 ```js
-Reloader.configure({
-  check: false, // Never check, wait background download
-  refresh: 'startAndResume', // Refresh to already downloaded code on both start and resume
-  idleCutoff: 1000 * 60 * 10  // Wait 10 minutes before treating a resume as a start
-});
+const DEFAULT_OPTIONS = {
+  check: 'everyStart',
+  checkTimer: 0,
+  refresh: 'startAndResume',
+  idleCutoff: 1000 * 60 * 5, // 5 minutes
+  launchScreenDelay: 100,
+};
 ```
 
-These default options will make sure that your app is up to date every time a user starts your app, or comes back to it after 10 minutes of being idle.
+These default options will make sure that your app is up to date every time a user starts your app, or comes back to it after 5 minutes of being idle.
 
 Another popular configuration is:
 
-```js
-Reloader.configure({
-  check: 'firstStart', // Only make an additonal check the first time the app ever starts
-  checkTimer: 5000,  // Wait 5 seconds to see if new code is available on first start
-  refresh: 'start' // Only refresh to already downloaded code on a start and not a resume
-});
+```json
+{ 
+  "public": 
+    "packages": {
+      "quave:reloader": {
+        "check": "firstStart",
+        "checkTimer": 5000,
+        "refresh": "start"
+      }
+    }
+  }
+}
 ```
 
 This will make sure the first time your app is run it is up to date, will download new versions of code while the app is being used, and then only update when the app is next started.
 
-You can have a different configuration for development, for instance:
-
-```js
-if (Meteor.isDevelopment) {
-  Reloader.configure({
-    check: false, // don't check on startup
-    refresh: 'instantly' // refresh as soon as updates are available
-  });
-} else {
-  Reloader.configure({
-    // production configuration
-  });
-}
-```
+You can have a different configuration for development just using a different settings.
 
 ### check
 
@@ -144,20 +138,6 @@ Reloader.updateAvailable.get(); // Reactively returns true if an update is ready
 
 Call `Reloader.reload()` to refresh the page.
 
-## Development
-
-### Run tests
-
-```bash
-git clone git@github.com:jamielob/reloader.git
-cd reloader
-# uncomment the noted line in package.js
-meteor test-packages ./ --driver-package practicalmeteor:mocha
-open localhost:3000
-```
-
 ### Credits
 
-[Contributors](https://github.com/jamielob/reloader/graphs/contributors)
-
-And thanks to @martijnwalraven for his help with this packages and superb work on Meteor Cordova! 👏
+thanks to @jamielob and @martijnwalraven for his help with this package (forks)!

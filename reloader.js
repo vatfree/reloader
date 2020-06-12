@@ -2,6 +2,10 @@ import { Meteor } from 'meteor/meteor';
 import { Tracker } from 'meteor/tracker';
 import { ReactiveVar } from 'meteor/reactive-var';
 import { LaunchScreen } from 'meteor/launch-screen';
+import { getSettings } from 'meteor/quave:settings';
+
+export const PACKAGE_NAME = 'quave:reloader';
+export const settings = getSettings({ packageName: PACKAGE_NAME });
 
 /**
  *  check: Match.Optional(Match.OneOf('everyStart', 'firstStart', false)),
@@ -21,18 +25,12 @@ const DEFAULT_OPTIONS = {
   launchScreenDelay: 100,
 };
 
-const options =
-  (Meteor.settings &&
-    Meteor.settings.public &&
-    Meteor.settings.public.reloader) ||
-  {};
-
 const debug = (message, context) => {
-  if (!options.debug) {
+  if (!settings.debug) {
     return;
   }
   // eslint-disable-next-line no-console
-  console.log(`[pathable:reloader] ${message}`, JSON.stringify(context));
+  console.log(`[${PACKAGE_NAME}] ${message}`, JSON.stringify(context));
 };
 
 const launchScreen = LaunchScreen.hold();
@@ -43,7 +41,8 @@ const Reloader = {
 
   initialize() {
     debug('initialize - DEFAULT_OPTIONS', { DEFAULT_OPTIONS });
-    const optionsWithDefaults = Object.assign({}, DEFAULT_OPTIONS, options);
+    debug('initialize - settings', { settings });
+    const optionsWithDefaults = Object.assign({}, DEFAULT_OPTIONS, settings);
 
     Object.assign(this._options, optionsWithDefaults);
     debug('initialize - options', { _options: this._options });
@@ -158,6 +157,16 @@ const Reloader = {
         debug('prereload - release launchScreen');
         launchScreen.release();
 
+        if (
+          !navigator ||
+          !navigator.splashscreen ||
+          !navigator.splashscreen.hide
+        ) {
+          console.warn(
+            `[${PACKAGE_NAME}] navigator.splashscreen.hide not available`
+          );
+          return;
+        }
         debug('prereload - hide splashscreen');
         navigator.splashscreen.hide();
       }
@@ -269,6 +278,6 @@ document.addEventListener(
 // Capture the reload
 // import { Reload } from 'meteor/reload' is not working
 // eslint-disable-next-line no-undef
-Reload._onMigrate('pathable:reloader', retry => Reloader._onMigrate(retry));
+Reload._onMigrate(`${PACKAGE_NAME}`, retry => Reloader._onMigrate(retry));
 
 export { Reloader };

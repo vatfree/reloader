@@ -1,10 +1,9 @@
-# Change Log
+# Changelog
+## 1.6.0 - 2020-06-12
+### Config using Meteor.settings
+- Config now is set using `Meteor.settings.public.packages.reloader` object
 
-All notable changes to this project will be documented in this file.
-This project adheres to [Semantic Versioning](http://semver.org/).
-
-[Change log file format](http://keepachangelog.com/)
-
+## past (before quave fork)
 ## [1.5.0] - 2019-02-08
 ### Config using Meteor.settings
 - Config now is set using `Meteor.settings.public.reloader` object
