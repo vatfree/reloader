@@ -2,10 +2,19 @@ import { Meteor } from 'meteor/meteor';
 import { Tracker } from 'meteor/tracker';
 import { ReactiveVar } from 'meteor/reactive-var';
 import { LaunchScreen } from 'meteor/launch-screen';
-import { getSettings } from 'meteor/quave:settings';
+import { settings, debugFn, PACKAGE_NAME } from './common';
 
-export const PACKAGE_NAME = 'quave:reloader';
-export const settings = getSettings({ packageName: PACKAGE_NAME });
+const RefreshType = {
+  INSTANTLY: 'instantly',
+  START_AND_RESUME: 'startAndResume',
+  START: 'start',
+};
+
+const CheckType = {
+  EVERY_START: 'everyStart',
+  FIRST_START: 'firstStart',
+  NEVER: 'never',
+};
 
 /**
  *  check: Match.Optional(Match.OneOf('everyStart', 'firstStart', false)),
@@ -18,50 +27,72 @@ export const settings = getSettings({ packageName: PACKAGE_NAME });
  *  debug: Boolean
  */
 const DEFAULT_OPTIONS = {
-  check: 'everyStart',
+  check: CheckType.EVERY_START,
   checkTimer: 0,
-  refresh: 'startAndResume',
+  refresh: RefreshType.START_AND_RESUME,
   idleCutoff: 1000 * 60 * 5, // 5 minutes
-  launchScreenDelay: 100,
+  launchScreenDelay: 500,
+  alwaysCheckBeforeReload: true,
+  automaticInitialization: true,
 };
 
-const debug = (message, context) => {
-  if (!settings.debug) {
-    return;
-  }
-  // eslint-disable-next-line no-console
-  console.log(`[${PACKAGE_NAME}] ${message}`, JSON.stringify(context));
-};
+debugFn('starting - DEFAULT_OPTIONS', { DEFAULT_OPTIONS });
+debugFn('starting - settings', { settings });
+const options = Object.assign({}, DEFAULT_OPTIONS, settings);
+
+debugFn('starting - options', { options });
+
+const defaultRetry = () => console.log(`[${PACKAGE_NAME}] no retry function yet`);
 
 const launchScreen = LaunchScreen.hold();
 
+let initialized = false;
+
 const Reloader = {
   _options: {},
+  // eslint-disable-next-line no-console
+  _retry: defaultRetry,
   updateAvailable: new ReactiveVar(false),
+  isChecked: new ReactiveVar(false),
 
-  initialize() {
-    debug('initialize - DEFAULT_OPTIONS', { DEFAULT_OPTIONS });
-    debug('initialize - settings', { settings });
-    const optionsWithDefaults = Object.assign({}, DEFAULT_OPTIONS, settings);
-
-    Object.assign(this._options, optionsWithDefaults);
-    debug('initialize - options', { _options: this._options });
+  debug(message, context) {
+    debugFn(message, {
+      ...context,
+      updateAvailable: this.updateAvailable.get(),
+      isChecked: this.isChecked.get(),
+      _options: this._options,
+    });
   },
 
-  prereload() {
-    debug('prereload - show splashscreen');
+  initialize(optionsParam = {}) {
+    if (initialized) {
+      return;
+    }
+    initialized = true;
+    this._options = Object.assign({}, options, optionsParam);
+    this._onPageLoad();
+  },
+
+  prepareToReload() {
+    this.debug('prereload - show splashscreen');
     // Show the splashscreen
     navigator.splashscreen.show();
 
     const currentDate = Date.now();
-    debug('prereload - reloaderWasRefreshed', { currentDate });
+    this.debug('prereload - reloaderWasRefreshed', { currentDate });
     // Set the refresh flag
     localStorage.setItem('reloaderWasRefreshed', currentDate);
   },
 
-  reload() {
-    debug('reload');
-    this.prereload();
+  reloadNow() {
+    this.debug('reloadNow');
+    if (this._isCheckBeforeReload() && !this.isChecked.get()) {
+      this.debug(
+        'not reloading because alwaysCheckBeforeReload is true and it is not checked yet'
+      );
+      return;
+    }
+    this.prepareToReload();
 
     // We'd like to make the browser reload the page using location.replace()
     // instead of location.reload(), because this avoids validating assets
@@ -69,10 +100,10 @@ const Reloader = {
     // when the location contains a hash however, because that wouldn't reload
     // the page and just scroll to the hash location instead.
     if (window.location.hash || window.location.href.endsWith('#')) {
-      debug('reload - reload');
+      this.debug('reloadNow - reload');
       window.location.reload();
     } else {
-      debug('reload - replace');
+      this.debug('reloadNow - replace');
       window.location.replace(window.location.href);
     }
   },
@@ -80,9 +111,9 @@ const Reloader = {
   // Should check if a cold start and (either everyStart is set OR firstStart
   // is set and it's our first start)
   _shouldCheckForUpdateOnStart() {
-    debug('_shouldCheckForUpdateOnStart');
-    if (!this._options.check) {
-      debug('_shouldCheckForUpdateOnStart - check false', {
+    this.debug('_shouldCheckForUpdateOnStart');
+    if (!this._options.check || this._options.check === CheckType.NEVER) {
+      this.debug('_shouldCheckForUpdateOnStart - check false', {
         check: this._options.check,
       });
       return false;
@@ -90,25 +121,25 @@ const Reloader = {
 
     const isColdStart = !localStorage.getItem('reloaderWasRefreshed');
     const reloaderLastStart = localStorage.getItem('reloaderLastStart');
-    debug('_shouldCheckForUpdateOnStart - info', {
+    this.debug('_shouldCheckForUpdateOnStart - info', {
       isColdStart,
       check: this._options.check,
       reloaderLastStart,
     });
     const should =
       isColdStart &&
-      (this._options.check === 'everyStart' ||
-        (this._options.check === 'firstStart' && !reloaderLastStart));
+      (this._options.check === CheckType.EVERY_START ||
+        (this._options.check === CheckType.FIRST_START && !reloaderLastStart));
 
-    debug('_shouldCheckForUpdateOnStart - should', { should });
+    this.debug('_shouldCheckForUpdateOnStart - should', { should });
     return should;
   },
 
   // Check if the idleCutoff is set AND we exceeded the idleCutOff limit AND the everyStart check is set
   _shouldCheckForUpdateOnResume() {
-    debug('_shouldCheckForUpdateOnResume');
-    if (!this._options.check) {
-      debug('_shouldCheckForUpdateOnResume - check false', {
+    this.debug('_shouldCheckForUpdateOnResume');
+    if (!this._options.check || this._options.check === CheckType.NEVER) {
+      this.debug('_shouldCheckForUpdateOnResume - check false', {
         check: this._options.check,
       });
       return false;
@@ -117,7 +148,7 @@ const Reloader = {
     const reloaderLastPause = localStorage.getItem('reloaderLastPause');
     // In case a pause event was missed, assume it didn't make the cutoff
     if (!reloaderLastPause) {
-      debug('_shouldCheckForUpdateOnResume no reloaderLastPause');
+      this.debug('_shouldCheckForUpdateOnResume no reloaderLastPause');
       return false;
     }
 
@@ -127,7 +158,7 @@ const Reloader = {
     // Calculate the cutoff timestamp
     const idleCutoffAt = Number(Date.now() - this._options.idleCutoff);
 
-    debug('_shouldCheckForUpdateOnResume - info', {
+    this.debug('_shouldCheckForUpdateOnResume - info', {
       idleCutoff: this._options.idleCutoff,
       check: this._options.check,
       lastPause,
@@ -136,25 +167,25 @@ const Reloader = {
     return (
       this._options.idleCutoff &&
       lastPause < idleCutoffAt &&
-      this._options.check === 'everyStart'
+      this._options.check === CheckType.EVERY_START
     );
   },
 
   _waitForUpdate(computation) {
-    debug('_waitForUpdate');
+    this.debug('_waitForUpdate');
     // Check if we have a HCP after the check timer is up
     Meteor.setTimeout(() => {
       // If there is a new version available
       if (this.updateAvailable.get()) {
-        debug('_waitForUpdate - reload');
-        this.reload();
+        this.debug('_waitForUpdate - reloadNow');
+        this.reloadNow();
       } else {
         // Stop waiting for update
         if (computation) {
           computation.stop();
         }
 
-        debug('prereload - release launchScreen');
+        this.debug('prereload - release launchScreen');
         launchScreen.release();
 
         if (
@@ -167,24 +198,24 @@ const Reloader = {
           );
           return;
         }
-        debug('prereload - hide splashscreen');
+        this.debug('prereload - hide splashscreen');
         navigator.splashscreen.hide();
       }
     }, this._options.checkTimer || 0);
   },
 
   _checkForUpdate() {
-    debug('_checkForUpdate');
+    this.debug('_checkForUpdate');
     if (this.updateAvailable.get()) {
       // Check for an even newer update
-      debug('_checkForUpdate - check for an even newer update');
+      this.debug('_checkForUpdate - check for an even newer update');
       this._waitForUpdate();
     } else {
       // Wait until update is available, or give up on timeout
       Tracker.autorun(c => {
         if (this.updateAvailable.get()) {
-          debug('_checkForUpdate - reload');
-          this.reload();
+          this.debug('_checkForUpdate - reloadNow');
+          this.reloadNow();
         }
 
         this._waitForUpdate(c);
@@ -193,12 +224,12 @@ const Reloader = {
   },
 
   _onPageLoad() {
-    debug('_onPageLoad');
+    this.debug('_onPageLoad');
     if (this._shouldCheckForUpdateOnStart()) {
       this._checkForUpdate();
     } else {
       Meteor.setTimeout(() => {
-        debug('_onPageLoad - release launchScreen');
+        this.debug('_onPageLoad - release launchScreen');
         launchScreen.release();
 
         // Reset the reloaderWasRefreshed flag
@@ -208,13 +239,13 @@ const Reloader = {
   },
 
   _onResume() {
-    debug('_onResume');
+    this.debug('_onResume');
     const shouldCheck = this._shouldCheckForUpdateOnResume();
 
     localStorage.removeItem('reloaderLastPause');
 
     if (shouldCheck) {
-      debug('_onResume - show splashscreen');
+      this.debug('_onResume - show splashscreen');
       navigator.splashscreen.show();
 
       this._checkForUpdate();
@@ -225,19 +256,49 @@ const Reloader = {
     // Check if there's a new version available already AND we need to refresh on resume
     if (
       this.updateAvailable.get() &&
-      this._options.refresh === 'startAndResume'
+      this._options.refresh === RefreshType.START_AND_RESUME
     ) {
-      this.reload();
+      this.reloadNow();
     }
   },
 
-  // https://github.com/meteor/meteor/blob/devel/packages/reload/reload.js#L104-L122
-  _onMigrate() {
-    debug('_onMigrate');
-    if (this._options.refresh === 'instantly') {
-      this.prereload();
+  _isCheckBeforeReload() {
+    this.debug('_isCheckBeforeReload');
+    return this._options.alwaysCheckBeforeReload && this._options.beforeReload;
+  },
 
+  _callBeforeLoad() {
+    this.debug('_callBeforeLoad');
+    const updateApp = () => {
+      this.debug('_callBeforeLoad set isChecked to true');
+      this.isChecked.set(true);
+      this._retry();
+    };
+    const holdAppUpdate = () => {
+      this.debug('_callBeforeLoad set isChecked to false');
+      this.isChecked.set(false);
+    };
+    this._options.beforeReload(updateApp, holdAppUpdate);
+  },
+
+  // https://github.com/meteor/meteor/blob/devel/packages/reload/reload.js#L104-L122
+  _onMigrate(retry) {
+    this.debug('_onMigrate');
+    this._retry = retry || this._retry;
+    if (
+      this._options.refresh === RefreshType.INSTANTLY &&
+      (!this._isCheckBeforeReload() || this.isChecked.get())
+    ) {
+      // we are calling prepareToReload because as we are returning true the reload
+      // will happen in the reload package then we are updating our timestamps
+      this.prepareToReload();
+
+      this.isChecked.set(false);
       return [true, {}];
+    }
+
+    if (this._isCheckBeforeReload()) {
+      this._callBeforeLoad();
     }
 
     // Set the flag
@@ -248,8 +309,9 @@ const Reloader = {
   },
 };
 
-Reloader.initialize();
-Reloader._onPageLoad();
+if (options.automaticInitialization) {
+  Reloader.initialize();
+}
 
 // Set the last start flag
 localStorage.setItem('reloaderLastStart', Date.now());

@@ -1,6 +1,6 @@
 Package.describe({
   name: 'quave:reloader',
-  version: '1.6.0',
+  version: '2.0.0',
   summary: 'More control over hot code push reloading',
   git: 'https://github.com/quavedev/reloader/',
 });
@@ -19,6 +19,6 @@ Package.onUse(function(api) {
 
   api.use('quave:settings@1.0.0');
 
-  api.mainModule('reloader.js', 'web.cordova');
-  api.export('Reloader', 'client');
+  api.mainModule('reloader-client.js', 'client');
+  api.mainModule('reloader-cordova.js', 'web.cordova');
 });
