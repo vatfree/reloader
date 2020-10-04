@@ -1,6 +1,6 @@
 Package.describe({
   name: 'quave:reloader',
-  version: '2.0.0',
+  version: '2.0.1',
   summary: 'More control over hot code push reloading',
   git: 'https://github.com/quavedev/reloader/',
 });
