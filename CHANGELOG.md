@@ -1,4 +1,12 @@
 # Changelog
+
+## 2.0.2 - 2020-10-19
+### New feature
+You can control from your app code when your app should update.
+
+### Clean up
+We removed options that we don't believe are necessary, read more details [here](./README.md)
+
 ## 1.6.0 - 2020-06-12
 ### Config using Meteor.settings
 - Config now is set using `Meteor.settings.public.packages.reloader` object
