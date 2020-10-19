@@ -95,3 +95,147 @@ ReloaderCordova.initialize({
   },
 });
 ```
+
+## Example with React
+
+File: `Routes.js` (where we render the routes)
+```javascript
+
+export const Routes = () => {
+  useEffect(() => initializeReloader(), []);
+
+  return (
+    <Switch>
+      // React router routes...
+    </Switch>
+  );
+}
+```
+
+File: `initializeReloader.js`
+```javascript
+import { Reloader } from 'meteor/quave:reloader';
+import { loggerClient } from 'meteor/quave:logs/loggerClient';
+import { showConfirm } from './ConfirmationDialog';
+import { methodCall } from '../../methods/methodCall';
+import { version } from '../../version';
+
+export const initializeReloader = () => {
+  loggerClient.info({ message: 'initializeReloader' });
+  Reloader.initialize({
+    async beforeReload(updateApp, holdAppUpdate) {
+      loggerClient.info({ message: 'initializeReloader beforeReload' });
+      let appUpdateData = {};
+      try {
+        appUpdateData =
+          (await methodCall('getAppUpdateData', { clientVersion: version })) ||
+          {};
+      } catch (e) {
+        loggerClient.info({
+          message: 'forcing app reload because getAppUpdateData is breaking',
+        });
+        updateApp();
+        return;
+      }
+      loggerClient.info({
+        message: 'initializeReloader beforeReload appUpdateData',
+        appUpdateData,
+      });
+      if (appUpdateData.ignore) {
+        loggerClient.info({
+          message:
+            'initializeReloader beforeReload appUpdateData ignore is true',
+          appUpdateData,
+        });
+        return;
+      }
+      const cancelAction = appUpdateData.forceUpdate
+        ? updateApp
+        : holdAppUpdate;
+      try {
+        const message = appUpdateData.forceUpdate
+          ? 'Precisamos atualizar o aplicativo. É rapidinho!'
+          : 'Deseja atualizar agora? É rapidinho!';
+        const result = await showConfirm({
+          autoFocus: false,
+          title: appUpdateData.title || 'Atualização disponível',
+          content: appUpdateData.message || message,
+          confirmText: appUpdateData.actionLabel || 'Beleza',
+          cancelText: appUpdateData.noActionLabel || 'Mais tarde',
+          hideCancel: !!appUpdateData.forceUpdate,
+          dismiss: cancelAction,
+          onCancel() {
+            loggerClient.info({
+              message: 'initializeReloader beforeReload onCancel',
+              appUpdateData,
+            });
+            cancelAction();
+          },
+        });
+        loggerClient.info({
+          message: `initializeReloader beforeReload showConfirm result is ${result}`,
+          appUpdateData,
+        });
+        if (result) {
+          loggerClient.info({
+            message: 'initializeReloader beforeReload showConfirm ok',
+            appUpdateData,
+          });
+          updateApp();
+          return;
+        }
+        loggerClient.info({
+          message: 'initializeReloader beforeReload showConfirm nok',
+          appUpdateData,
+        });
+        cancelAction();
+      } catch (e) {
+        loggerClient.info({
+          message: 'initializeReloader beforeReload showConfirm catch call nok',
+          appUpdateData,
+        });
+        cancelAction();
+      }
+    },
+  });
+};
+
+```
+
+File: `getAppUpdateData.js`
+```javascript
+import { Meteor } from 'meteor/meteor';
+import { logger } from 'meteor/quave:logs/logger';
+import { AppUpdatesCollection } from '../db/AppUpdatesCollection';
+import { version } from '../version';
+
+Meteor.methods({
+  getAppUpdateData({ clientVersion } = {}) {
+    this.unblock();
+
+    if (Meteor.isClient) return null;
+
+    const appUpdate = AppUpdatesCollection.findOne() || {};
+
+    const result = {
+      ...appUpdate,
+      ...(appUpdate.ignoreVersions &&
+      appUpdate.ignoreVersions.length &&
+      appUpdate.ignoreVersions.includes(version)
+        ? { ignore: true }
+        : {}),
+      version,
+    };
+    logger.info({
+      message: `getAppUpdateData clientVersion=${clientVersion}, newClientVersion=${version}, ${JSON.stringify(
+        result
+      )}`,
+      appUpdateData: appUpdate,
+      appUpdateResult: result,
+      clientVersion,
+    });
+    return result;
+  },
+});
+
+```
