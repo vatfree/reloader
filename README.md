@@ -32,7 +32,7 @@ reloading.
 
 ### Reload when the app allows
 
-We recommend this method as with it you can control when you are app is going to
+We recommend this method as with it you can control when your app is going to
 reload. You can even delegate this decision to the final user.
 
 In this case you must use `automaticInitialization` as `false` in your settings.
@@ -71,14 +71,14 @@ resume.
 
 Default: `0`
 
-How long the splash screen will be visible, it's useful to avoid your app being rendered just for a few milliseconds and then refreshing.
+How long the splash screen will be visible. It's useful to avoid your app being rendered just for a few milliseconds and then refreshing.
 
 ### automaticInitialization
 
 Default: `true`
 
 If you want to initialize the `reloader` yourself you need to turn
-off `automaticInitialization`, this is useful when you want to provide code to
+off `automaticInitialization`. This is useful when you want to provide code to
 some callback as this is not possible using JSON initialization.
 
 You can provide your callbacks calling Reloader.initialize(), for example:
