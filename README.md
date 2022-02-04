@@ -23,7 +23,7 @@ reloading.
 ```json
 "public": {
   "packages": {
-    "quave:reloader": {
+    "jaskinn:reloader": {
       "launchScreenDelay": 200
     }
   }
@@ -40,7 +40,7 @@ In this case you must use `automaticInitialization` as `false` in your settings.
 ```json
 "public": {
   "packages": {
-    "quave:reloader": {
+    "jaskinn:reloader": {
       "automaticInitialization": false
     }
   }
@@ -53,7 +53,7 @@ You also need to call
 ## Installing
 
 ```sh
-meteor add quave:reloader
+meteor add jaskinn:reloader
 meteor remove mdg:reload-on-resume
 ```
 
