@@ -8,7 +8,7 @@ ecmascript-runtime-server@0.10.0
 fetch@0.1.1
 inter-process-messaging@0.1.1
 launch-screen@1.2.0
-quave:reloader@2.0.3
+jaskinn:reloader@2.0.3
 meteor@1.9.3
 modern-browsers@0.1.5
 modules@0.15.0
