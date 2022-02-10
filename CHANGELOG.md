@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.0.3 - 2021-02-10
+### Fixed
+
+- Fix for intermittent "undefined is not an object (evaluating 'navigator.splashscreen.show')" error on resume in iOS.
+ 
 ## 2.0.2 - 2020-10-19
 ### New feature
 You can control from your app code when your app should update.
