@@ -2,7 +2,7 @@ Package.describe({
   name: 'jaskinn:reloader',
   version: '2.0.3',
   summary: 'More control over hot code push reloading',
-  git: 'https://github.com/quavedev/reloader/',
+  git: 'https://github.com/jaskinn/reloader/',
 });
 
 Cordova.depends({
