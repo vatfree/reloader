@@ -13,7 +13,7 @@ Package.onUse(function(api) {
   api.versionsFrom('1.10.2');
 
   api.use(
-    ['ecmascript', 'reload', 'reactive-var', 'tracker', 'launch-screen'],
+    ['ecmascript', 'reload', 'reactive-var', 'tracker', 'launch-screen@2.0.0'],
     'client'
   );
 
